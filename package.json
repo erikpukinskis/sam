@@ -1,0 +1,13 @@
+{
+  "name": "friend",
+  "version": "0.0.0",
+  "description": "helps you out",
+  "dependencies": {
+    "nrtv-library": "*",
+    "nrtv-element": "*",
+    "nrtv-server": "*",
+    "nrtv-browser-bridge": "*",
+    "nrtv-single-use-socket": "*",
+    "nrtv-dispatcher": "*"
+  }
+}
