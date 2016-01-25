@@ -9,17 +9,16 @@ library.using(
     var waitingForPeople = []
 
     function withPerson(func) {
-      dispatcher.addTask(function() {
-        var person
-        func(person)
-      }, function() {
-        console.log("Done with person")
-      })
+      dispatcher.addTask(
+        func,
+        function() {
+          console.log("Done with person")
+        }
+      )
     }
 
     function keepThemOnTrack(person) {
-      ask(
-        person,
+      person.ask(
         "are you coding?",
         thenWaitOrHelp
       )
@@ -66,9 +65,29 @@ library.using(
 
         bridge.asap(waitForWork)
 
-        var ui = [sam(), speech(), element.stylesheet(sam, speech)]
+        var ui = [sam(), speech("bla"), element.stylesheet(sam, speech)]
 
         bridge.sendPage(ui)(request, response)
+
+        function findSomethingToDo() {
+          console.log("OK, we're looking for some shiz to diz")
+
+          dispatcher.requestWork(
+            function(task) {
+              var person = {
+                ask: ask.bind(null, socket)
+              }
+
+              task.func(person)
+            }
+          )
+        }
+
+        function ask(socket, question, callback) {
+          socket.send(question)
+          throw new Error("jeev")
+        }
+
       }
     }
 
@@ -93,44 +112,23 @@ library.using(
 
     var speech = element.template(
       ".speech",
-      "say you, say me",
       element.style({
         "display": "inline-block",
         "width": "150px",
         "background": "white",
-        "border": "1px solid #FFFBFC",
-        "border-width": "1px 2px 3px 2px",
+        "box-shadow": "0px 2px 7px rgba(0,0,0,0.2)",
         "margin-left": "5px",
         "padding": "11px 15px",
-        "border-radius": "8px 8px 9px 8px",
         "font-family": "sans",
-        "border-color": "#FBF5F7 #EBEAFB #EBEAFB #FFFBFC",
         "font-family": "sans-serif",
-        "color": "#823567",
         "font-size": "18px",
-        "font-weight": "lighter"
-      })
+      }),
+      function(message) {
+        this.children.push(element(message))
+      }
     )
 
     var waitingForWork = []
-
-    function findSomethingToDo() {
-      console.log("OK, we're looking for some shiz to diz")
-
-      dispatcher.requestWork(
-        function(task) {
-          task.func()
-        }
-      )
-
-      var job = waitingForPeople.shift()
-      var person = {}
-      if (job) {
-        job(person)
-      } else {
-        waitingForWork.push(person)
-      }
-    }
 
     findPeople()
     withPerson(keepThemOnTrack)
