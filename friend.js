@@ -1,8 +1,49 @@
 var library = require("nrtv-library")(require)
 
+
+// I am not concerned with random passersby
+
+// I am concerned with the powers that be
+
+// not the powers that might
+
+
+
+// tellTheStars("we are become ancients")
+
+
+
+// findPeople(...
+
+
+
+// tellAStory
+
+// tellTheStars
+
+
+
+//  -> it's already done! -> notifyTheAuthor
+//  -> ok -> askWhenToCheckIn
+//  -> i don't know how
+//  -> i don't feel like it
+
+// splitStory (if you had to do it, how would you start)
+
+//  -> askThemToDoIt
+//    -> ok -> askWhenToCheckIn
+//    -> i don't feel like it ----> askWhenToAskAgain
+//    -> i don't know how -> splitStory
+
+
+
+// limit the number of miracles in series https://youtu.be/ab2VVp1GfmA?t=11m22s
+
+
+
 library.using(
-  ["nrtv-server", "nrtv-element", "nrtv-browser-bridge", "nrtv-single-use-socket", "nrtv-dispatcher"],
-  function(Server, element, BrowserBridge, SingleUseSocket, Dispatcher) {
+  ["nrtv-server", "nrtv-element", "nrtv-browser-bridge", "nrtv-library-bridge", "nrtv-single-use-socket", "nrtv-dispatcher"],
+  function(Server, element, BrowserBridge, bridgeModule, SingleUseSocket, Dispatcher) {
   
 
     var dispatcher = new Dispatcher()
@@ -59,13 +100,27 @@ library.using(
         var socket = new SingleUseSocket(
           server, findSomethingToDo)
 
-        var waitForWork = socket
-        .defineListenInBrowser(bridge)
-        .withArgs(doWork)
+        var elementInBrowser = bridgeModule(library, "nrtv-element", bridge)
 
-        bridge.asap(waitForWork)
+        var sayInBrowser = bridge.defineFunction(
+          [elementInBrowser],
+          function(element, message) {
 
-        var ui = [sam(), speech("bla"), element.stylesheet(sam, speech)]
+            var speechBubble = element(".speech", message)
+
+            var world = document.querySelector(".world")
+
+            world.innerHTML = world.innerHTML + speechBubble.html()
+          }
+        )
+
+        bridge.asap(
+          socket
+          .defineListenInBrowser(bridge)
+          .withArgs(sayInBrowser)
+        )
+
+        var ui = [element(".world", sam()), element.stylesheet(sam, speech)]
 
         bridge.sendPage(ui)(request, response)
 
@@ -85,14 +140,9 @@ library.using(
 
         function ask(socket, question, callback) {
           socket.send(question)
-          throw new Error("jeev")
         }
 
       }
-    }
-
-    function doWork(message) {
-      console.log("WORK NOW BRO!", message)
     }
 
     var sam = element.template(
@@ -132,7 +182,6 @@ library.using(
 
     findPeople()
     withPerson(keepThemOnTrack)
-
   }
 )
 
