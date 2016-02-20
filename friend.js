@@ -64,6 +64,10 @@ library.using(
         thenWaitOrHelp
       )
 
+      person.ask(
+        "is it night?",
+        function(){})
+
       function thenWaitOrHelp(isCoding) {
         if (isCoding) {
           wait(
@@ -103,14 +107,25 @@ library.using(
         var elementInBrowser = bridgeModule(library, "nrtv-element", bridge)
 
         var sayInBrowser = bridge.defineFunction(
-          [elementInBrowser],
-          function(element, message) {
+          [bridge.collective({}), elementInBrowser],
+          function(collective, element, message) {
 
-            var speechBubble = element(".speech", message)
+            if (collective.bubble) {
 
-            var world = document.querySelector(".world")
+              collective.bubble.innerHTML = collective.bubble.innerHTML + element(element.raw(message)).html()
 
-            world.innerHTML = world.innerHTML + speechBubble.html()
+            } else {
+              var speechBubble = element(".speech", element(element.raw(message)))
+
+              var id = speechBubble.assignId()
+
+              var world = document.querySelector(".world")
+
+              world.innerHTML = world.innerHTML + speechBubble.html()
+
+              collective.bubble = document.querySelector("#"+id)
+            }
+            
           }
         )
 
@@ -125,8 +140,6 @@ library.using(
         bridge.sendPage(ui)(request, response)
 
         function findSomethingToDo() {
-          console.log("OK, we're looking for some shiz to diz")
-
           dispatcher.requestWork(
             function(task) {
               var person = {
