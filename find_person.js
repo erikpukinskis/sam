@@ -77,10 +77,11 @@ library.using(
         "font-size": "18px",
       }),
       function(message) {
-        this.children.push(element(message))
+        this.children.push(
+          element(element.raw(message))
+        )
       }
     )
-
 
     // Here's the central HR kind of stuff:
 
@@ -139,7 +140,7 @@ library.using(
 
       function giveEmSomethingToDo(request, response) {
 
-        var person = wrapRequestWithPerson(request, response, server)
+        var person = personInBrowser(request, response, server)
 
         dispatcher.requestWork(
           function(task) {
@@ -151,7 +152,27 @@ library.using(
       server.start(5111)
     }
 
-    function wrapRequestWithPerson(request, response, server) {
+
+    function personInBrowser(request, response, server) {
+      
+      var person = {
+        say: function(message) {
+          var bridge = new BrowserBridge()
+          
+          var styles = element.stylesheet(sam, speech)
+
+          var el = speech(message)
+
+          var handler = bridge.sendPage([el, styles])
+
+          handler(request, response)
+        }
+      }
+
+      return person
+    }
+
+    function personInGameEngine(request, response, server) {
 
       var bridge = new BrowserBridge()
 
@@ -176,8 +197,8 @@ library.using(
       bridge.sendPage(ui)(request, response)
 
       var person = {
-        say: function(statement) {                
-          socket.send(statement)
+        say: function(message) {     
+          socket.send(message)
         }
       }
 
@@ -191,13 +212,18 @@ library.using(
         collective.bubble.innerHTML = collective.bubble.innerHTML + element(element.raw(message)).html()
 
       } else {
-        var speechBubble = element(".speech", element(element.raw(message)))
+        var bubble = element(
+          ".speech",
+          element(element.raw(message))
+        )
 
-        var id = speechBubble.assignId()
+        // ok this is where we might in theory want the template. at least the generator! maybe el.defineInBrowser(bridge)
+
+        var id = bubble.assignId()
 
         var world = document.querySelector(".world")
 
-        world.innerHTML = world.innerHTML + speechBubble.html()
+        world.innerHTML = world.innerHTML + bubble.html()
 
         collective.bubble = document.querySelector("#"+id)
       }
@@ -213,7 +239,7 @@ library.using(
 
 
 
-// narratives are just posted to /username/modulename/x.x.x There is no different create or put or whatever. It's just a statement of opinion by a user, it will be tagged at a time. you can just post again if you want to change it. any unposted modules are just assumed to not exist
+// narratives are just posted to /username/modulename/x.x.x There is no different create or put or whatever. It's just a statement of opinion by a user of what a certain name means to them, it will be tagged at a time. you can just post again if you want to change it. any unposted modules are just assumed to not exist
 
 
 
