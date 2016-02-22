@@ -48,6 +48,38 @@ library.using(
 
     // Some styles we'll need later:
 
+    var baseText = element.style(
+      "body, input, button, .button, p",
+      {
+        "font-family": "Helvetica",
+        "font-size": "18px",
+        "color": "#555",
+        "-webkit-font-smoothing": "antialiased"
+      }
+    )
+
+    var baseInput = element.style(
+      "input, input[type=text], button, .button, .thing, .multiple-choice, .row",
+      {
+        "border": "0px",
+        "padding": "9px 15px",
+        "display": "block",
+        "margin-bottom": "15px"
+      }
+    )
+
+    var button = element.template(
+      "a.button",
+      element.style({
+        "background-color": "rgb(10, 209, 136)",
+        "color": "white",
+        "display": "inline-block",
+        "margin-right": "15px",
+        "margin-bottom": "15px",
+        "text-decoration": "none"
+      })
+    )
+
     var sam = element.template(
       ".sam",
       "◕‿◕",
@@ -77,6 +109,7 @@ library.using(
         "font-size": "18px",
       }),
       function(message) {
+        if (!message) { return }
         this.children.push(
           element(element.raw(message))
         )
@@ -103,18 +136,19 @@ library.using(
     }
 
     function keepThemOnTrack(person) {
-      person.say(
+      person.say("is it night?")
+
+      person.ask(
         "are you coding?",
         thenWaitOrHelp
       )
 
-      person.say(
-        "is it night?",
-        function(){})
+      person.sendPage()
 
       function thenWaitOrHelp(isCoding) {
+        console.log("isCoding is", isCoding)
         if (isCoding) {
-          wait(
+          person.wait(
             60,
             "seconds",
             function() {
@@ -122,7 +156,7 @@ library.using(
             }
           )
         } else {
-          say("Please update me so I can be helpful in this scenario")
+          person.say("Please update me so I can be helpful in this scenario")
         }
       }
     }
@@ -152,21 +186,64 @@ library.using(
       server.start(5111)
     }
 
-
     function personInBrowser(request, response, server) {
-      
-      var person = {
-        say: function(message) {
-          var bridge = new BrowserBridge()
-          
-          var styles = element.stylesheet(sam, speech)
 
-          var el = speech(message)
+      var styles = element.stylesheet(baseText, baseInput, speech, button)
 
-          var handler = bridge.sendPage([el, styles])
+      var bridge = new BrowserBridge()
 
-          handler(request, response)
+      var bubble
+
+      function getBubble() {
+        if (!bubble) {
+          bubble = speech()
         }
+        return bubble
+      }
+      
+      function say(message) {
+        var bubble = getBubble()
+
+        bubble.children.push(
+          element(element.raw(message))
+        )
+      }
+
+      function ask(question, callback) {
+        console.log("asking!")
+        var bubble = getBubble()
+
+        var questionPath = "/questions/"+encodeURIComponent(question)
+
+        console.log("adding route at", questionPath)
+
+        server.addRoute("get", questionPath, function(request) {
+            callback(request.query.answer == "yes")
+          }
+        )
+
+
+        bubble.children.push(
+          element(element.raw(question))
+        )
+        bubble.children.push(
+          element([
+            element("a.button", "yes", {href: questionPath+"?answer=yes"}),
+            element("a.button", "no", {href: questionPath+"?answer=no"}),
+          ])
+        )
+      }
+
+      function sendPage() {
+        var handler = bridge.sendPage([getBubble(), styles])
+
+        handler(null, response)
+      }
+
+      var person = {
+        say: say,
+        ask: ask,
+        sendPage: sendPage
       }
 
       return person
