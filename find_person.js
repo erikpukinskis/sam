@@ -146,7 +146,6 @@ library.using(
       person.sendPage()
 
       function thenWaitOrHelp(isCoding) {
-        console.log("isCoding is", isCoding)
         if (isCoding) {
           person.wait(
             60,
@@ -157,6 +156,7 @@ library.using(
           )
         } else {
           person.say("Please update me so I can be helpful in this scenario")
+          person.sendPage()
         }
       }
     }
@@ -169,6 +169,8 @@ library.using(
         "/",
         giveEmSomethingToDo
       )
+
+      // This should go into personInGameEngine somehow. Like personInGameEngine.init(server)
 
       SingleUseSocket.installOn(server)
 
@@ -188,9 +190,18 @@ library.using(
 
     function personInBrowser(request, response, server) {
 
+      var person = {
+        say: say,
+        ask: ask,
+        sendPage: sendPage,
+        response: response
+      }
+
       var styles = element.stylesheet(baseText, baseInput, speech, button)
 
       var bridge = new BrowserBridge()
+
+      // This maybe gets abstracted away as some kind of parent element. Maybe those bridge fragments are scoped to a specific element:
 
       var bubble
 
@@ -210,14 +221,15 @@ library.using(
       }
 
       function ask(question, callback) {
-        console.log("asking!")
         var bubble = getBubble()
 
         var questionPath = "/questions/"+encodeURIComponent(question)
 
-        console.log("adding route at", questionPath)
-
-        server.addRoute("get", questionPath, function(request) {
+        server.addRoute(
+          "get",
+          questionPath,
+          function(request, response) {
+            person.response = response
             callback(request.query.answer == "yes")
           }
         )
@@ -237,13 +249,7 @@ library.using(
       function sendPage() {
         var handler = bridge.sendPage([getBubble(), styles])
 
-        handler(null, response)
-      }
-
-      var person = {
-        say: say,
-        ask: ask,
-        sendPage: sendPage
+        handler(null, person.response)
       }
 
       return person
